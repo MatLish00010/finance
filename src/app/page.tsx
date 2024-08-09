@@ -1,10 +1,9 @@
-import { Button } from '@/components/ui/button';
+import { BudgetPie } from '@/components/ui/budget-pie';
 
 export default function Home() {
   return (
-    <>
-      <h1>LOL</h1>
-      <Button>LOL</Button>
-    </>
+    <main className="container pt-10">
+      <BudgetPie />
+    </main>
   );
 }
