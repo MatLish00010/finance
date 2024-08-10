@@ -1,4 +1,4 @@
-import { BudgetPie } from '@/components/ui/budget-pie';
+import { BudgetPie } from '@/components/budget-pie';
 
 export default function Home() {
   return (

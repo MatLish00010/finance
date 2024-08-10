@@ -1,23 +1,20 @@
 'use client';
 
 import * as React from 'react';
-import { TrendingUp } from 'lucide-react';
 import { Label, Pie, PieChart } from 'recharts';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import { Input } from '@/components/ui/input';
+import { ChangeEvent, useCallback, useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { Badge } from '@/components/ui/badge';
 
 const chartData = [
   { browser: 'chrome', visitors: 275, fill: 'var(--color-chrome)' },
@@ -29,7 +26,7 @@ const chartData = [
 
 const chartConfig = {
   visitors: {
-    label: 'Visitors',
+    label: 'Total',
   },
   chrome: {
     label: 'Chrome',
@@ -53,19 +50,48 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+interface IPie {
+  [key: string]: number;
+}
+
 export function BudgetPie() {
-  const totalVisitors = React.useMemo(() => {
+  const [pies, setPies] = useState<IPie>({
+    apartment: 22,
+  });
+  const [incum, setIncum] = useState(0);
+
+  const totalVisitors = useMemo(() => {
     return chartData.reduce((acc, curr) => acc + curr.visitors, 0);
   }, []);
+
+  const onChangeIncum = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => setIncum(Number(e.target.value || 0)),
+    [setIncum]
+  );
+
+  const onChangePie = useCallback(
+    (key: keyof IPie, val: IPie[keyof IPie]) => {
+      setPies({ ...pies, [key]: val });
+    },
+    [setPies]
+  );
 
   return (
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
-        <CardTitle>Pie Chart - Donut with Text</CardTitle>
-        <CardDescription>January - June 2024</CardDescription>
+        <CardTitle className="mb-5">Plan your expenses</CardTitle>
+        <div className="flex items-center gap-3">
+          <Input
+            placeholder="Incum"
+            className="max-w-[350px]"
+            type="number"
+            onChange={onChangeIncum}
+          />
+          <Button>Calculate</Button>
+        </div>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
-        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px]">
+        <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[250px]">
           <PieChart>
             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
             <Pie
@@ -93,7 +119,7 @@ export function BudgetPie() {
                           x={viewBox.cx}
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground">
-                          Visitors
+                          Total
                         </tspan>
                       </text>
                     );
@@ -105,12 +131,27 @@ export function BudgetPie() {
         </ChartContainer>
       </CardContent>
       <CardFooter className="flex-col gap-2 text-sm">
-        <div className="flex items-center gap-2 font-medium leading-none">
-          Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-        </div>
-        <div className="leading-none text-muted-foreground">
-          Showing total visitors for the last 6 months
-        </div>
+        {Object.entries(pies).map(([key, value]) => (
+          <div key={key} className="flex items-center gap-3 w-full max-w-[500px]">
+            <Badge variant="outline" className="capitalize text-nowrap">
+              {key} %
+            </Badge>
+            <Slider
+              defaultValue={[value]}
+              max={100}
+              step={1}
+              value={[value]}
+              onValueChange={nums => onChangePie(key, nums[0])}
+            />
+            <Input
+              className="w-16"
+              value={value}
+              min={0}
+              max={100}
+              onChange={e => onChangePie(key, Number(e.target.value))}
+            />
+          </div>
+        ))}
       </CardFooter>
     </Card>
   );
