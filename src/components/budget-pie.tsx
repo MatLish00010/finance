@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import { Label, Pie, PieChart } from 'recharts';
+import { ChangeEvent, useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -11,10 +13,10 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { Input } from '@/components/ui/input';
-import { ChangeEvent, useCallback, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
+import { ExpenseDrawer } from '@/components/expense-drawer';
 
 const chartData = [
   { browser: 'chrome', visitors: 275, fill: 'var(--color-chrome)' },
@@ -51,12 +53,18 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 interface IPie {
-  [key: string]: number;
+  [key: string]: {
+    value: number;
+    color: string;
+  };
 }
 
 export function BudgetPie() {
   const [pies, setPies] = useState<IPie>({
-    apartment: 22,
+    apartment: {
+      value: 22,
+      color: 'hsl(var(--chart-1))',
+    },
   });
   const [incum, setIncum] = useState(0);
 
@@ -70,10 +78,32 @@ export function BudgetPie() {
   );
 
   const onChangePie = useCallback(
-    (key: keyof IPie, val: IPie[keyof IPie]) => {
-      setPies({ ...pies, [key]: val });
+    (key: string, val: number) => {
+      setPies({
+        ...pies,
+        [key]: {
+          ...pies[key],
+          value: val,
+        },
+      });
     },
-    [setPies]
+    [setPies, pies]
+  );
+
+  const onAddPie = useCallback(
+    (key: string) => {
+      if (pies[key] !== undefined) {
+        toast.error(`'${key}' already exists!`);
+      } else
+        setPies({
+          ...pies,
+          [key]: {
+            value: 0,
+            color: `hsl(var(--chart-${Object.keys(pies).length + 1}))`,
+          },
+        });
+    },
+    [setPies, pies]
   );
 
   return (
@@ -131,27 +161,33 @@ export function BudgetPie() {
         </ChartContainer>
       </CardContent>
       <CardFooter className="flex-col gap-2 text-sm">
-        {Object.entries(pies).map(([key, value]) => (
-          <div key={key} className="flex items-center gap-3 w-full max-w-[500px]">
-            <Badge variant="outline" className="capitalize text-nowrap">
-              {key} %
-            </Badge>
-            <Slider
-              defaultValue={[value]}
-              max={100}
-              step={1}
-              value={[value]}
-              onValueChange={nums => onChangePie(key, nums[0])}
-            />
-            <Input
-              className="w-16"
-              value={value}
-              min={0}
-              max={100}
-              onChange={e => onChangePie(key, Number(e.target.value))}
-            />
-          </div>
-        ))}
+        <ExpenseDrawer onSubmit={onAddPie} />
+        <ul className="w-full flex flex-col gap-5 mt-5 max-w-[500px]">
+          {Object.entries(pies).map(([key, { value, color }]) => (
+            <li key={key}>
+              <div className="flex items-center gap-5 mb-5">
+                <Badge variant="outline" className={`capitalize text-nowrap  bg-[${color}]`}>
+                  {key} %
+                </Badge>
+                <Input
+                  className="w-16"
+                  value={value}
+                  min={0}
+                  max={100}
+                  onChange={e => onChangePie(key, Number(e.target.value))}
+                />
+              </div>
+              <Slider
+                className="flex-1"
+                defaultValue={[value]}
+                max={100}
+                step={1}
+                value={[value]}
+                onValueChange={nums => onChangePie(key, nums[0])}
+              />
+            </li>
+          ))}
+        </ul>
       </CardFooter>
     </Card>
   );
